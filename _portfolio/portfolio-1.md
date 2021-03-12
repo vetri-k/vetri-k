@@ -648,3 +648,118 @@ plot_dist3(train.join(yl), 'SalePrice', 'Sale Price After Log Transformation')
 <br/><img src='/images/HousingPrice/out50.jpg'
 
 # Modeling
+
+# Cross validation
+
+```Python# Cross validation setup
+from sklearn.model_selection import KFold, cross_val_score
+kfolds = KFold(n_splits=10, shuffle=True, random_state=42) # Training data is split into 10, data is shuffled before splitting, randomness in each fold
+```
+
+# Defining model
+```Python
+# Lasso regression
+from sklearn.linear_model import LassoCV
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import RobustScaler
+lasso_alphas = [5e-5, 1e-4, 5e-4, 1e-3]
+lasso = make_pipeline(RobustScaler(), LassoCV(max_iter=1e7, alphas=lasso_alphas, random_state=42, cv=kfolds))
+# RobustScaler removes the median and scales the data according to the quantile range (defaults to IQR: Interquartile Range)
+# The purpose of the pipeline is to assemble several steps that can be cross-validated together while setting different parameters
+
+# Ridge regression
+from sklearn.linear_model import RidgeCV
+ridge_alphas = [13.5, 14, 14.5, 15, 15.5]
+ridge = make_pipeline(RobustScaler(), RidgeCV(alphas=ridge_alphas, cv=kfolds))
+
+# Gradient Boost Regression
+from sklearn.ensemble import GradientBoostingRegressor
+gradb = GradientBoostingRegressor(n_estimators=6000, learning_rate=0.01,
+                                  max_depth=4, max_features='sqrt',
+                                  min_samples_leaf=15, min_samples_split=10,
+                                  loss='huber', random_state=42)
+# xgboost Regression
+xgboost = XGBRegressor(learning_rate=0.01, n_estimators=6000,
+                       max_depth=3, min_child_weight=0,
+                       gamma=0, subsample=0.7,
+                       colsample_bytree=0.7,
+                       objective='reg:squarederror', nthread=-1,
+                       scale_pos_weight=1, seed=27,
+                       reg_alpha=0.00006, random_state=42)
+                       
+# Stacking
+stackcv = StackingCVRegressor(regressors=(lasso, ridge, gradb), meta_regressor=xgboost, use_features_in_secondary=True)
+```
+
+# Model performance
+```Python
+from sklearn.model_selection import cross_validate
+def model_check(X, y, estimators, kfolds):
+    ''' Function to test multiple estimators '''
+    model_table = pd.DataFrame()
+    row_index = 0
+    for est, label in zip(estimators, labels):
+        model_table.loc[row_index, 'Model Name'] = label
+        cv_results = cross_validate(est, X, y, cv=kfolds, scoring='neg_root_mean_squared_error', return_train_score=True)
+        # cross_validate evaluates metric by cross-validation and record fit/score times
+        # 'neg_mean_squared_error’ is a scoring parameter 
+        model_table.loc[row_index, 'Train RMSE'] = -cv_results['train_score'].mean()
+        model_table.loc[row_index, 'Test RMSE'] = -cv_results['test_score'].mean()
+        model_table.loc[row_index, 'Test Std'] = cv_results['test_score'].std()
+        model_table.loc[row_index, 'Time'] = cv_results['fit_time'].mean()
+        row_index += 1
+    return model_table
+
+# Setting list of estimators and labels for them:
+
+estimators = [ridge, lasso, gradb, xgboost]
+labels = ['Ridge', 'Lasso', 'GradientBoostingRegressor', 'XGBoost']
+
+# Executing cross validation.
+
+models = model_check(X, yl, estimators, kfolds)
+display(models.round(decimals=3))
+```
+
+# Model fitting to training dataset
+```Python
+lasso_fit = lasso.fit(X, yl)
+ridge_fit = ridge.fit(X, yl)
+gradb_fit = gradb.fit(X, yl)
+stackcv_fit = stackcv.fit(X.values, yl.values)
+```
+
+# Blending models
+```Python
+y_train = np.expm1(yl)
+y_pred = np.expm1((0.3 * lasso_fit.predict(X)) +
+          (0.3 * ridge_fit.predict(X)) +
+          (0.1 * gradb_fit.predict(X)) +
+          (0.3 * stackcv_fit.predict(X.values)))
+
+from sklearn.metrics import mean_squared_error, mean_squared_log_error, mean_absolute_error
+rmsle = np.sqrt(mean_squared_log_error(y_train, y_pred))
+print(rmsle)
+```
+
+> 0.0694000779271092
+
+# Prediction
+```Python
+# Inversing and flooring log scaled sale price predictions
+prediction['SalePrice'] = np.floor(np.expm1((0.3 * lasso_fit.predict(X_test)) +
+                                            (0.3 * ridge_fit.predict(X_test)) +
+                                            (0.1 * gradb_fit.predict(X_test)) +
+                                            (0.3 * stackcv_fit.predict(X_test.values))
+                                           )
+                                  )
+prediction = prediction[['Id', 'SalePrice']]
+prediction.head()
+```
+
+<br/><img src='/images/HousingPrice/out70.jpg'
+
+```Python
+# Saving prediction file
+prediction.to_csv('prediction.csv', index=False)
+```
