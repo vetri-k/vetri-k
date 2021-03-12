@@ -19,7 +19,6 @@ This project will cover data exploration, data analysis, feature engineering, mo
 
 ```python
 # Loading neccesary library packages
-
 import numpy as np # array manipulation
 import pandas as pd # dataframe manipulation
 import matplotlib.pyplot as plt # plotting
@@ -58,6 +57,7 @@ test=pd.read_csv(test_filepath)
 print("train dataset size is", train.shape)
 print("test dataset size is", test.shape)
 ```
+
 > train dataset size is (1460, 81)
 > test dataset size is (1459, 80)
 
@@ -68,14 +68,14 @@ train.head()
 
 <img src='/images/HousingPrice/out4.jpg>'
 
-```Python
+```python
 # Examine test dataset
 test.head()
 ```
 
 <img src='/images/HousingPrice/out5.jpg>'
 
-```Python
+```python
 # Describe train dataset
 train.describe()
 ```
@@ -183,7 +183,7 @@ features['MSZoning'].value_counts(dropna=False) #Return a Series containing coun
 
 # Identify missing data
 
-```Python
+```python
 # Detect missing values and Visualize
 
 total_missing=features.isnull().sum() # checking for 'NaN' values and counting them
@@ -205,6 +205,7 @@ pd.concat([total_missing, train.dtypes], axis=1)
 <img src='/images/HousingPrice/out23.jpg>'
 
 # Addressing missing data
+
 ```python
 # List of columns with 'NaN' where NaN's equals none
 none_cols = ['Alley', 'MasVnrType', 'BsmtQual', 'BsmtCond',
@@ -255,7 +256,7 @@ plt.show()
 
 <img src='/images/HousingPrice/out28.png'
 
-```Python
+```python
 # Filling 'MSZoning' (categorical data) according to MSSubClass mode.
 features['MSZoning'] = features.groupby('MSSubClass')['MSZoning'].apply(lambda x: x.fillna(x.mode()[0]))
 # call .groupby() and pass the name of the column that needs to group on, which is "MSSubClass".
@@ -291,7 +292,7 @@ for col in others:
 
 # Categorical data
 
-```Python
+```python
 # Displaying categorical data
 
 def srt_box(y, df):
@@ -334,7 +335,7 @@ CentralAir: Higher sale price are observed on houses with central air conditioni
 
 GarageType: Houses with Builtin garage are expensive. Houses with carports are cheaper.
 
-```Python
+```python
 # Changing some of categorical variables to numeric to quantify them
 
 neigh_map = {
@@ -397,7 +398,7 @@ features['GarageQual'] = features['GarageQual'].map(bsm_map).astype('int')
 
 # Numerical data
 
-```Python
+```python
 # Scatter plots to see how numerical data effect sale prices is scatter plots. Plotting polynomial regression lines to see general trend and to spot outliers.
 
 # Plotting numerical features with polynomial order to detect outliers.
@@ -439,7 +440,7 @@ MoSold and YrSold: Month and year of sale does not have a effect on house sale p
 
 # Outliers
 
-```Python
+```python
 # Dropping outliers based on plots
 
 features = features.join(y)
@@ -511,7 +512,7 @@ srt_reg('SalePrice')
 
 <img src='/images/HousingPrice/out40.png>'
 
-```Python
+```python
 # Creating additional features which are binary based on numeric features 
 
 features['HasPool'] = features['PoolArea'].apply(lambda x: 1 if x > 0 else 0)
@@ -523,6 +524,7 @@ features['HasPorch'] = features['QualPorch'].apply(lambda x: 1 if x > 0 else 0)
 ```
 
 # Data transformation
+
 ```python
 # Certain continious variable features does not follow normal distribution
 # Box-Cox transforms data closely to normal distribution
@@ -587,7 +589,7 @@ sns.heatmap(sorted_correlations.to_frame()[sorted_correlations>=.5], cmap='coolw
 
 <img src='/images/HousingPrice/out46.png>'
 
-```Python
+```python
 def plot_dist3(df, feature, title):
     
     # Creating a customized chart. and giving in figsize and everything.
@@ -732,7 +734,8 @@ display(models.round(decimals=3))
 <img src='/images/HousingPrice/out66.jpg>'
 
 # Model fitting to training dataset
-```Python
+
+```python
 lasso_fit = lasso.fit(X, yl)
 ridge_fit = ridge.fit(X, yl)
 gradb_fit = gradb.fit(X, yl)
