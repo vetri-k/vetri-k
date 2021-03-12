@@ -1,6 +1,7 @@
 ---
 title: "House Price Prediction"
-classes: "wide"
+layout: single
+classes: wide
 excerpt: "Predict house prices using advanced regression techniques <br/><img src='/images/HousingPrice/Ames_Iowa.png'>"
 collection: portfolio
 ---
