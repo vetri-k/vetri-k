@@ -122,6 +122,7 @@ print("Size of test data features", test_features.shape)
 # Seaborn joint plot: bivariate plot with univariate marginal distributions
 sns.jointplot(data=train, x='LotArea', y='SalePrice', height=10, alpha=0.4, color='red', xlim=(-10000,50000), ylim=(-10000,500000))
 ```
+
 <br/><img src='/images/HousingPrice/out13.jpg'
 
 Distribution is similar to normal distribution with outliers.
@@ -144,6 +145,506 @@ sns.heatmap(correlation_train, # data
            )
 ```
 
-# Insights
+# Observations
 
+- Strong correlation is observed between sale price and overallqual (overall material and finish) of the house, GrLivArea (ground living area).
+- Sale price is also affected on different levels by
+  - year built (YearBuilt)
+  - masonry veneer area
+  - basement area
+  - first floor area
+  - garage area
+  - number of baths and rooms
+- Dwelling type (MSSubClass) and overall condition (OverallCond) not that dependent on the sale price.
+- There are correlation between number of rooms and area, garage size and area.
 
+```Python
+# Merging train and test data before editing to reduce data manipulation work
+features=pd.concat([train_features, test_features]).reset_index(drop=True) # resets the index to the default integer index
+print(features.shape)
+```
+
+> (2919, 79)
+
+```Python
+# Frequency counts in a column, value_counts(): Frequency counts
+features['MSZoning'].value_counts(dropna=False) #Return a Series containing counts of unique values
+```
+> RL         2265
+> RM          460
+> FV          139
+> RH           26
+> C (all)      25
+> NaN           4
+> Name: MSZoning, dtype: int64
+
+# Identify missing data
+
+```Python
+# Detect missing values and Visualize
+
+total_missing=features.isnull().sum() # checking for 'NaN' values and counting them
+total_missing_nonzero=total_missing[total_missing!=0] # drop rows with zero, dfnew=df[df!=0]
+percent=(total_missing/len(features))*(100)
+
+plt.figure(figsize=(20,10))
+plt.xticks(rotation=90)
+sns.barplot(x=total_missing.index, y=percent)
+```
+
+<br/><img src='/images/HousingPrice/out22.jpg'
+
+```Python
+# Identify if the missing data is categorical or numeric
+pd.concat([total_missing, train.dtypes], axis=1)
+```
+
+# Addressing missing data
+```Python
+# List of columns with 'NaN' where NaN's equals none
+none_cols = ['Alley', 'MasVnrType', 'BsmtQual', 'BsmtCond',
+             'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2', 'FireplaceQu',
+             'GarageType','GarageFinish', 'GarageQual', 'GarageCond', 'PoolQC', 'Fence', 'MiscFeature']
+
+# List of columns with 'NaN' where NaN's equals 0
+zero_cols = ['BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 'BsmtFullBath',
+    'BsmtHalfBath', 'GarageYrBlt', 'GarageArea', 'GarageCars', 'MasVnrArea']
+
+# List of columns with 'NaN' where NaN's (missing) replaced with mode
+freq_cols = ['Utilities', 'Exterior1st', 'Exterior2nd', 'Electrical', 'Functional', 'KitchenQual',
+    'SaleType']
+
+# Filling the list of columns above with appropriate values:
+for col in none_cols:
+    features[col] = features[col].fillna('None')
+
+for col in zero_cols:
+    features[col] = features[col].fillna(0) # Replace NaN Values with Zeros in Pandas DataFrame
+
+for col in freq_cols:
+    features[col] = features[col].fillna(features[col].mode()[0])
+
+total_missing=features.isnull().sum() # checking for 'NaN' values and counting them
+total_missing
+```
+
+<br/><img src='/images/HousingPrice/out26.jpg'
+
+```Python
+# Examine MSZoning categorical data based on MSSubClass
+plt.figure(figsize=(15,10))
+sns.boxplot(x=features['MSSubClass'], y=features['MSZoning'], whis=np.inf)
+sns.stripplot(x=features['MSSubClass'], y=features['MSZoning'], color='0.3')
+```
+
+<br/><img src='/images/HousingPrice/out27.jpg'
+
+```Python
+# Examine LotFrontage categorical data based on Neighborhood
+plt.figure(figsize=(15,10))
+sns.boxplot(x=features['Neighborhood'], y=features['LotFrontage'], whis=np.inf)
+sns.stripplot(x=features['Neighborhood'], y=features['LotFrontage'], color='0.3') # scatterplot where one variable is categorical
+plt.xticks(rotation=90)
+plt.show()
+```
+
+<br/><img src='/images/HousingPrice/out28.jpg'
+
+```Python
+# Filling 'MSZoning' (categorical data) according to MSSubClass mode.
+features['MSZoning'] = features.groupby('MSSubClass')['MSZoning'].apply(lambda x: x.fillna(x.mode()[0]))
+# call .groupby() and pass the name of the column that needs to group on, which is "MSSubClass".
+# Then, use ["MSZoning"] to specify the columns on which actual aggregation needs to be performed.
+
+# Filling 'LotFrontage' (numerical data) according to Neighborhood median.
+features['LotFrontage'] = features.groupby(['Neighborhood'])['LotFrontage'].apply(lambda x: x.fillna(x.median()))
+
+# Changing numerical features to category.
+features['MSSubClass'] = features['MSSubClass'].astype(str)
+features['YrSold'] = features['YrSold'].astype(str)
+features['MoSold'] = features['MoSold'].astype(str)
+```
+
+# Feature engineering
+
+```Python
+features.nunique()
+# features['Condition1']
+```
+
+<br/><img src='/images/HousingPrice/out30.jpg'
+
+```Python
+# Transforming rare values (less than 10) into one group.
+
+others = ['Condition1', 'Condition2', 'RoofMatl', 'Exterior1st', 'Exterior2nd','Heating', 'Electrical', 'Functional', 'SaleType']
+
+for col in others:
+    mask = features[col].isin(features[col].value_counts()[features[col].value_counts() < 10].index)
+    features[col][mask] = 'Other'
+```
+
+# Categorical data
+
+```Python
+# Displaying categorical data
+
+def srt_box(y, df):
+    
+    fig, axes = plt.subplots(14, 3, figsize=(25, 80)) # Create a figure and a set of subplots
+    axes = axes.flatten()
+# simultaneously iterate through each column of data and through each of our axes making a plot for each step along the way.
+# using the axes.flatten() method, don’t have to go through the hastle of nested for loops to deal with a variable number of rows and columns in our figure.
+    
+    for i, j in zip(df.select_dtypes(include=['object']).columns, axes):
+        sortd = df.groupby([i])[y].median().sort_values(ascending=False) # Group within each column is sorted based on median to see influence of sale price
+        sns.boxplot(x=i,
+                    y=y,
+                    data=df,
+                    palette='plasma',
+                    order=sortd.index, # within each plot, box plots are ordered based on sortd
+                    ax=j) # plots arranged based on axes 
+        j.tick_params(labelrotation=45) # tick label rotation
+        j.yaxis.set_major_locator(MaxNLocator(nbins=18)) # Tick locators define the position of the ticks
+
+        plt.tight_layout() # Automatically adjust subplot parameters to give specified padding
+
+# sale prices vs catergorical data
+srt_box('SalePrice', train)
+```
+
+<br/><img src='/images/HousingPrice/out33.jpg'
+
+# Categorical data observations
+
+MSZoning: Floating village houses has the highest median value. Residental low density houses has outliers. Residental high and medium are similar and commercial is the least.
+
+LandContour: Hillside houses are expensive than the rest.
+
+Neighborhood: Expensive houese are in Northridge Heights, Northridge and Timberland. Outliers are observed in Gilbert, Northwest Ames, North Ames, Edwards and Old Town. Low price houses are observed in Briardale, Iowa DOT and Rail Road and Meadow Village.
+
+MasVnrType: stone masonry veneer type are higher than others.
+
+CentralAir: Higher sale price are observed on houses with central air conditioning .
+
+GarageType: Houses with Builtin garage are expensive. Houses with carports are cheaper.
+
+```Python
+# Changing some of categorical variables to numeric to quantify them
+
+neigh_map = {
+    'MeadowV': 1,
+    'IDOTRR': 1,
+    'BrDale': 1,
+    'BrkSide': 2,
+    'OldTown': 2,
+    'Edwards': 2,
+    'Sawyer': 3,
+    'Blueste': 3,
+    'SWISU': 3,
+    'NPkVill': 3,
+    'NAmes': 3,
+    'Mitchel': 4,
+    'SawyerW': 5,
+    'NWAmes': 5,
+    'Gilbert': 5,
+    'Blmngtn': 5,
+    'CollgCr': 5,
+    'ClearCr': 6,
+    'Crawfor': 6,
+    'Veenker': 7,
+    'Somerst': 7,
+    'Timber': 8,
+    'StoneBr': 9,
+    'NridgHt': 10,
+    'NoRidge': 10
+}
+features['Neighborhood'] = features['Neighborhood'].map(neigh_map).astype('int')
+# Map values of Series according to input correspondence.
+
+ext_map = {'Po': 1, 'Fa': 2, 'TA': 3, 'Gd': 4, 'Ex': 5}
+features['ExterQual'] = features['ExterQual'].map(ext_map).astype('int')
+features['ExterCond'] = features['ExterCond'].map(ext_map).astype('int')
+
+bsm_map = {'None': 0, 'Po': 1, 'Fa': 2, 'TA': 3, 'Gd': 4, 'Ex': 5}
+features['BsmtQual'] = features['BsmtQual'].map(bsm_map).astype('int')
+features['BsmtCond'] = features['BsmtCond'].map(bsm_map).astype('int')
+
+bsmf_map = {
+    'None': 0,
+    'Unf': 1,
+    'LwQ': 2,
+    'Rec': 3,
+    'BLQ': 4,
+    'ALQ': 5,
+    'GLQ': 6
+}
+features['BsmtFinType1'] = features['BsmtFinType1'].map(bsmf_map).astype('int')
+features['BsmtFinType2'] = features['BsmtFinType2'].map(bsmf_map).astype('int')
+
+heat_map = {'Po': 1, 'Fa': 2, 'TA': 3, 'Gd': 4, 'Ex': 5}
+features['HeatingQC'] = features['HeatingQC'].map(heat_map).astype('int')
+features['KitchenQual'] = features['KitchenQual'].map(heat_map).astype('int')
+features['FireplaceQu'] = features['FireplaceQu'].map(bsm_map).astype('int')
+features['GarageCond'] = features['GarageCond'].map(bsm_map).astype('int')
+features['GarageQual'] = features['GarageQual'].map(bsm_map).astype('int')
+```
+
+# Numerical data
+
+```Python
+# Scatter plots to see how numerical data effect sale prices is scatter plots. Plotting polynomial regression lines to see general trend and to spot outliers.
+
+# Plotting numerical features with polynomial order to detect outliers.
+
+def srt_reg(y, df):
+    fig, axes = plt.subplots(12, 3, figsize=(25, 80))
+    axes = axes.flatten()
+
+    for i, j in zip(df.select_dtypes(include=['number']).columns, axes):
+
+        sns.regplot(x=i,
+                    y=y,
+                    data=df,
+                    ax=j,
+                    order=3,
+                    ci=None,
+                    color='#e74c3c',
+                    line_kws={'color': 'black'},
+                    scatter_kws={'alpha':0.4})
+        j.tick_params(labelrotation=45)
+        j.yaxis.set_major_locator(MaxNLocator(nbins=10))
+
+        plt.tight_layout()
+srt_reg('SalePrice', train)
+
+<br/><img src='/images/HousingPrice/out35.jpg'
+
+# Numerical data observations
+
+OverallQual: Sale price of the house increases with overall quality.
+
+OverallCondition: Houses are around 5/10 condition and negatively skewed.
+
+YearBuilt: New houses are expensive compared to old ones.
+
+GrLivArea and GarageArea: Sale price increases with increase in ground floor area and garage area.
+
+MoSold and YrSold: Month and year of sale does not have a effect on house sale price.
+
+# Outliers
+
+```Python
+# Dropping outliers based on plots
+
+features = features.join(y)
+features = features.drop(features[(features['OverallQual'] < 5) & (features['SalePrice'] > 200000)].index)
+# .index, the index (row labels) of the DataFrame. Finds the index where both conditions are satisfied and those indexs are dropped from features
+features = features.drop(features[(features['GrLivArea'] > 4000) & (features['SalePrice'] < 200000)].index)
+features = features.drop(features[(features['GarageArea'] > 1200) & (features['SalePrice'] < 200000)].index)
+features = features.drop(features[(features['TotalBsmtSF'] > 3000) & (features['SalePrice'] > 320000)].index)
+features = features.drop(features[(features['1stFlrSF'] < 3000) & (features['SalePrice'] > 600000)].index)
+features = features.drop(features[(features['1stFlrSF'] > 3000) & (features['SalePrice'] < 200000)].index)
+
+y = features['SalePrice']
+y.dropna(inplace=True)
+features.drop(columns='SalePrice', inplace=True)
+```
+
+# Creating new features
+```Python
+# Combining related features based on observations
+features['TotalSF'] = (features['BsmtFinSF1'] + features['BsmtFinSF2'] + features['1stFlrSF'] + features['2ndFlrSF'])
+features['TotalBathrooms'] = (features['FullBath'] + (0.5 * features['HalfBath']) + features['BsmtFullBath'] + (0.5 * features['BsmtHalfBath']))
+features['TotalPorchSF'] = (features['OpenPorchSF'] + features['3SsnPorch'] + features['EnclosedPorch'] + features['ScreenPorch'] + features['WoodDeckSF'])
+features['YearBlRm'] = (features['YearBuilt'] + features['YearRemodAdd'])
+
+# Combining quality features
+features['TotalExtQual'] = (features['ExterQual'] + features['ExterCond'])
+features['TotalBsmQual'] = (features['BsmtQual'] + features['BsmtCond'] + features['BsmtFinType1'] + features['BsmtFinType2'])
+features['TotalGrgQual'] = (features['GarageQual'] + features['GarageCond'])
+features['TotalQual'] = features['OverallQual'] + features['TotalExtQual'] + features['TotalBsmQual'] + features['TotalGrgQual'] + features['KitchenQual'] + features['HeatingQC']
+
+# Creating new features based on quality features
+features['QualGr'] = features['TotalQual'] * features['GrLivArea']
+features['QualBsm'] = features['TotalBsmQual'] * (features['BsmtFinSF1'] +features['BsmtFinSF2'])
+features['QualPorch'] = features['TotalExtQual'] * features['TotalPorchSF']
+features['QualExt'] = features['TotalExtQual'] * features['MasVnrArea']
+features['QualGrg'] = features['TotalGrgQual'] * features['GarageArea']
+features['QlLivArea'] = (features['GrLivArea'] - features['LowQualFinSF']) * (features['TotalQual'])
+features['QualSFNg'] = features['QualGr'] * features['Neighborhood']
+
+# Observing the effects of new features on sale price.
+def srt_reg(feature):
+    merged = features.join(y)
+    fig, axes = plt.subplots(5, 3, figsize=(25, 40))
+    axes = axes.flatten()
+
+    new_features = ['TotalSF', 'TotalBathrooms', 'TotalPorchSF', 'YearBlRm',
+        'TotalExtQual', 'TotalBsmQual', 'TotalGrgQual', 'TotalQual', 'QualGr',
+        'QualBsm', 'QualPorch', 'QualExt', 'QualGrg', 'QlLivArea', 'QualSFNg']
+
+    for i, j in zip(new_features, axes):
+
+        sns.regplot(x=i,
+                    y=feature, # looks for the feature in the "merged" data
+                    data=merged,
+                    ax=j,
+                    order=3,
+                    ci=None,
+                    color='#e74c3c',
+                    line_kws={'color': 'black'},
+                    scatter_kws={'alpha':0.4})
+        j.tick_params(labelrotation=45)
+        j.yaxis.set_major_locator(MaxNLocator(nbins=10))
+
+        plt.tight_layout()
+
+# checking new features
+srt_reg('SalePrice')
+```
+
+```Python
+# Creating additional features which are binary based on numeric features 
+
+features['HasPool'] = features['PoolArea'].apply(lambda x: 1 if x > 0 else 0)
+features['Has2ndFloor'] = features['2ndFlrSF'].apply(lambda x: 1if x > 0 else 0)
+features['HasGarage'] = features['QualGrg'].apply(lambda x: 1 if x > 0 else 0)
+features['HasBsmt'] = features['QualBsm'].apply(lambda x: 1 if x > 0 else 0)
+features['HasFireplace'] = features['Fireplaces'].apply(lambda x: 1 if x > 0 else 0)
+features['HasPorch'] = features['QualPorch'].apply(lambda x: 1 if x > 0 else 0)
+```
+
+# Data transformation
+```Python
+# Certain continious variable features does not follow normal distribution
+# Box-Cox transforms data closely to normal distribution
+
+# Numerical features which are skewed
+skewed = ['LotFrontage', 'LotArea', 'MasVnrArea', 'BsmtFinSF1', 'BsmtFinSF2',
+    'BsmtUnfSF', 'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'GrLivArea',
+    'GarageArea', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', '3SsnPorch',
+    'ScreenPorch', 'PoolArea', 'LowQualFinSF', 'MiscVal']
+
+# Finding skewness of the numerical features.
+skew_features = np.abs(features[skewed].apply(lambda x: skew(x)).sort_values(ascending=False))
+
+# Filtering skewed features.
+high_skew = skew_features[skew_features > 0.3]
+
+# Taking indexes of high skew.
+skew_index = high_skew.index
+
+# Applying boxcox transformation to fix skewness.
+# Box cox transformation is defined as a way to transform non-normal dependent variables in our data to a normal shape to reduce noise and improve prediction.
+
+for i in skew_index:
+    features[i] = boxcox1p(features[i], boxcox_normmax(features[i] + 1))   
+
+# Features to drop
+to_drop = ['Utilities','PoolQC','YrSold','MoSold','ExterQual','BsmtQual','GarageQual','KitchenQual','HeatingQC',]
+
+# Dropping features
+features.drop(columns=to_drop, inplace=True)
+
+# Getting dummy variables for categorical data.
+features = pd.get_dummies(data=features) # Convert categorical variable into dummy/indicator variables
+```
+
+# Data check
+
+```Python
+# Checking data before modelling 
+print(f'Number of missing values: {features.isna().sum().sum()}')
+print(features.shape)
+features.head()
+```
+
+> Number of missing values: 0
+> (2908, 226)
+
+<br/><img src='/images/HousingPrice/out44.jpg'
+
+```Python
+# Separating train and test data
+train = features.iloc[:len(y), :]
+test = features.iloc[len(train):, :]
+
+# Check how transformed data correlates with sale price
+correlations = train.join(y).corrwith(train.join(y)['SalePrice']).iloc[:-1].to_frame() # Join columns of another DataFrame
+correlations['Abs Corr'] = correlations[0].abs()
+sorted_correlations = correlations.sort_values('Abs Corr', ascending=False)['Abs Corr']
+fig, ax = plt.subplots(figsize=(12,12))
+sns.heatmap(sorted_correlations.to_frame()[sorted_correlations>=.5], cmap='coolwarm', annot=True, vmin=-1, vmax=1, ax=ax);
+```
+
+<br/><img src='/images/HousingPrice/out46.jpg'
+
+```Python
+def plot_dist3(df, feature, title):
+    
+    # Creating a customized chart. and giving in figsize and everything.
+    fig = plt.figure(constrained_layout=True, figsize=(12, 8))
+    
+    # creating a grid of 3 cols and 3 rows.
+    grid = gridspec.GridSpec(ncols=3, nrows=3, figure=fig)
+
+    # Customizing the histogram grid.
+    ax1 = fig.add_subplot(grid[0, :2])
+    
+    # Set the title.
+    ax1.set_title('Histogram')
+    
+    # plot the histogram.
+    sns.distplot(df.loc[:, feature],
+                 hist=True,
+                 kde=True,
+                 fit=norm,
+                 ax=ax1,
+                 color='#e74c3c')
+    ax1.legend(labels=['Normal', 'Actual'])
+
+    # customizing the QQ_plot.
+    ax2 = fig.add_subplot(grid[1, :2])
+    
+    # Set the title.
+    ax2.set_title('Probability Plot')
+    
+    # Plotting the QQ_Plot.
+    stats.probplot(df.loc[:, feature].fillna(np.mean(df.loc[:, feature])),plot=ax2)
+    ax2.get_lines()[0].set_markerfacecolor('#e74c3c')
+    ax2.get_lines()[0].set_markersize(12.0)
+
+    # Customizing the Box Plot:
+    ax3 = fig.add_subplot(grid[:, 2])
+    
+    # Set title.
+    ax3.set_title('Box Plot')
+    
+    # Plotting the box plot.
+    sns.boxplot(df.loc[:, feature], orient="v", ax=ax3, color='#e74c3c')
+    ax3.yaxis.set_major_locator(MaxNLocator(nbins=24))
+
+    plt.suptitle(f'{title}', fontsize=24)
+
+# check target value distribution. applying log transformation
+# Checking target variable
+
+plot_dist3(train.join(y), 'SalePrice', 'Sale Price Before Log Transformation')
+```
+
+<br/><img src='/images/HousingPrice/out48.jpg'
+
+```Python
+# Setting model data.
+
+X = train
+X_test = test
+yl = np.log1p(y) # log transformation of sale price
+
+plot_dist3(train.join(yl), 'SalePrice', 'Sale Price After Log Transformation')
+```
+
+<br/><img src='/images/HousingPrice/out50.jpg'
+
+# Modeling
