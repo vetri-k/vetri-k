@@ -11,4 +11,4 @@ redirect_from:
 
 About Me
 ---
-Engineer passionate about working with data and providing impactful presentation of insights. Engineer passionate about working with data and providing impactful presentation of insights. Engineer passionate about working with data and providing impactful presentation of insights.
+Engineer passionate about working with data and providing impactful presentation of insights.
