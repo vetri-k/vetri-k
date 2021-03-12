@@ -15,7 +15,7 @@ This project will cover data exploration, data analysis, feature engineering, mo
 
 # Data fields and description
 
-<img src='/images/HousingPrice/data_des.jpg>'
+<img src='/images/HousingPrice/data_des.jpg'>
 
 ```python
 # Loading neccesary library packages
@@ -66,28 +66,28 @@ print("test dataset size is", test.shape)
 train.head()
 ```
 
-<img src='/images/HousingPrice/out4.jpg>'
+<img src='/images/HousingPrice/out4.jpg'>
 
 ```python
 # Examine test dataset
 test.head()
 ```
 
-<img src='/images/HousingPrice/out5.jpg>'
+<img src='/images/HousingPrice/out5.jpg'>
 
 ```python
 # Describe train dataset
 train.describe()
 ```
 
-<img src='/images/HousingPrice/out6.jpg>'
+<img src='/images/HousingPrice/out6.jpg'>
 
 ```python
 # data frame information: non-null values and data types
 train.info()
 ```
 
-<img src='/images/HousingPrice/out7.jpg>'
+<img src='/images/HousingPrice/out7.jpg'>
 
 There are null values which needs to be addressed.
 
@@ -97,7 +97,7 @@ sns.lineplot(data=train.Id)
 sns.lineplot(data=test.Id)
 ```
 
-<img src='/images/HousingPrice/out10.png>'
+<img src='/images/HousingPrice/out10.png'>
 
 ```python
 # Dropping unnecessary column "Id"
@@ -124,7 +124,7 @@ print("Size of test data features", test_features.shape)
 sns.jointplot(data=train, x='LotArea', y='SalePrice', height=10, alpha=0.4, color='red', xlim=(-10000,50000), ylim=(-10000,500000))
 ```
 
-<img src='/images/HousingPrice/out13.png>'
+<img src='/images/HousingPrice/out13.png'>
 
 Distribution is similar to normal distribution with outliers.
 
@@ -146,7 +146,7 @@ sns.heatmap(correlation_train, # data
            )
 ```
 
-<img src='/images/HousingPrice/out17.png>'
+<img src='/images/HousingPrice/out17.png'>
 
 # Observations
 
@@ -195,14 +195,14 @@ plt.xticks(rotation=90)
 sns.barplot(x=total_missing.index, y=percent)
 ```
 
-<img src='/images/HousingPrice/out22.png>'
+<img src='/images/HousingPrice/out22.png'>
 
 ```python
 # Identify if the missing data is categorical or numeric
 pd.concat([total_missing, train.dtypes], axis=1)
 ```
 
-<img src='/images/HousingPrice/out23.jpg>'
+<img src='/images/HousingPrice/out23.jpg'>
 
 # Addressing missing data
 
@@ -234,7 +234,7 @@ total_missing=features.isnull().sum() # checking for 'NaN' values and counting t
 total_missing
 ```
 
-<img src='/images/HousingPrice/out26.jpg>'
+<img src='/images/HousingPrice/out26.jpg'>
 
 ```python
 # Examine MSZoning categorical data based on MSSubClass
@@ -243,7 +243,7 @@ sns.boxplot(x=features['MSSubClass'], y=features['MSZoning'], whis=np.inf)
 sns.stripplot(x=features['MSSubClass'], y=features['MSZoning'], color='0.3')
 ```
 
-<img src='/images/HousingPrice/out27.png>'
+<img src='/images/HousingPrice/out27.png'>
 
 ```python
 # Examine LotFrontage categorical data based on Neighborhood
@@ -254,7 +254,7 @@ plt.xticks(rotation=90)
 plt.show()
 ```
 
-<img src='/images/HousingPrice/out28.png'
+<img src='/images/HousingPrice/out28.png'>
 
 ```python
 # Filling 'MSZoning' (categorical data) according to MSSubClass mode.
@@ -278,7 +278,7 @@ features.nunique()
 # features['Condition1']
 ```
 
-<img src='/images/HousingPrice/out30.jpg>'
+<img src='/images/HousingPrice/out30.jpg'>
 
 ```python
 # Transforming rare values (less than 10) into one group.
@@ -424,7 +424,7 @@ def srt_reg(y, df):
         plt.tight_layout()
 srt_reg('SalePrice', train)
 
-<img src='/images/HousingPrice/out35.png>'
+<img src='/images/HousingPrice/out35.png'>
 
 # Numerical data observations
 
@@ -510,7 +510,7 @@ def srt_reg(feature):
 srt_reg('SalePrice')
 ```
 
-<img src='/images/HousingPrice/out40.png>'
+<img src='/images/HousingPrice/out40.png'>
 
 ```python
 # Creating additional features which are binary based on numeric features 
@@ -572,7 +572,7 @@ features.head()
 > Number of missing values: 0
 > (2908, 226)
 
-<img src='/images/HousingPrice/out44.jpg>'
+<img src='/images/HousingPrice/out44.jpg'>
 
 ```python
 # Separating train and test data
@@ -587,7 +587,7 @@ fig, ax = plt.subplots(figsize=(12,12))
 sns.heatmap(sorted_correlations.to_frame()[sorted_correlations>=.5], cmap='coolwarm', annot=True, vmin=-1, vmax=1, ax=ax);
 ```
 
-<img src='/images/HousingPrice/out46.png>'
+<img src='/images/HousingPrice/out46.png'>
 
 ```python
 def plot_dist3(df, feature, title):
@@ -642,7 +642,7 @@ def plot_dist3(df, feature, title):
 plot_dist3(train.join(y), 'SalePrice', 'Sale Price Before Log Transformation')
 ```
 
-<img src='/images/HousingPrice/out48.png>'
+<img src='/images/HousingPrice/out48.png'>
 
 ```python
 # Setting model data.
@@ -654,7 +654,7 @@ yl = np.log1p(y) # log transformation of sale price
 plot_dist3(train.join(yl), 'SalePrice', 'Sale Price After Log Transformation')
 ```
 
-<img src='/images/HousingPrice/out50.png>'
+<img src='/images/HousingPrice/out50.png'>
 
 # Modeling
 
@@ -731,7 +731,7 @@ models = model_check(X, yl, estimators, kfolds)
 display(models.round(decimals=3))
 ```
 
-<img src='/images/HousingPrice/out66.jpg>'
+<img src='/images/HousingPrice/out66.jpg'>
 
 # Model fitting to training dataset
 
@@ -770,7 +770,7 @@ prediction = prediction[['Id', 'SalePrice']]
 prediction.head()
 ```
 
-<img src='/images/HousingPrice/out70.jpg>'
+<img src='/images/HousingPrice/out70.jpg'>
 
 ```python
 # Saving prediction file
