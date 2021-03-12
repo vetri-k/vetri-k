@@ -1,5 +1,6 @@
 ---
 title: "House Price Prediction"
+classes: "wide"
 excerpt: "Predict house prices using advanced regression techniques <br/><img src='/images/HousingPrice/Ames_Iowa.png'>"
 collection: portfolio
 ---
@@ -16,7 +17,7 @@ This project will cover data exploration, data analysis, feature engineering, mo
 
 <br/><img src='/images/HousingPrice/data_des.jpg'
 
-```Python
+```python
 # Loading neccesary library packages
 
 import numpy as np # array manipulation
