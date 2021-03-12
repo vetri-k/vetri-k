@@ -423,6 +423,7 @@ def srt_reg(y, df):
 
         plt.tight_layout()
 srt_reg('SalePrice', train)
+```
 
 <img src='/images/HousingPrice/out35.png'>
 
