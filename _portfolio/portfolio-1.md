@@ -97,7 +97,7 @@ sns.lineplot(data=train.Id)
 sns.lineplot(data=test.Id)
 ```
 
-<br/><img src='/images/HousingPrice/out10.jpg'
+<br/><img src='/images/HousingPrice/out10.png'
 
 ```Python
 # Dropping unnecessary column "Id"
@@ -124,7 +124,7 @@ print("Size of test data features", test_features.shape)
 sns.jointplot(data=train, x='LotArea', y='SalePrice', height=10, alpha=0.4, color='red', xlim=(-10000,50000), ylim=(-10000,500000))
 ```
 
-<br/><img src='/images/HousingPrice/out13.jpg'
+<br/><img src='/images/HousingPrice/out13.png'
 
 Distribution is similar to normal distribution with outliers.
 
@@ -193,7 +193,7 @@ plt.xticks(rotation=90)
 sns.barplot(x=total_missing.index, y=percent)
 ```
 
-<br/><img src='/images/HousingPrice/out22.jpg'
+<br/><img src='/images/HousingPrice/out22.png'
 
 ```Python
 # Identify if the missing data is categorical or numeric
@@ -238,7 +238,7 @@ sns.boxplot(x=features['MSSubClass'], y=features['MSZoning'], whis=np.inf)
 sns.stripplot(x=features['MSSubClass'], y=features['MSZoning'], color='0.3')
 ```
 
-<br/><img src='/images/HousingPrice/out27.jpg'
+<br/><img src='/images/HousingPrice/out27.png'
 
 ```Python
 # Examine LotFrontage categorical data based on Neighborhood
@@ -652,7 +652,8 @@ plot_dist3(train.join(yl), 'SalePrice', 'Sale Price After Log Transformation')
 
 # Cross validation
 
-```Python# Cross validation setup
+```python
+# Cross validation setup
 from sklearn.model_selection import KFold, cross_val_score
 kfolds = KFold(n_splits=10, shuffle=True, random_state=42) # Training data is split into 10, data is shuffled before splitting, randomness in each fold
 ```
