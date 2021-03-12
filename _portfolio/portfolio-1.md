@@ -46,7 +46,7 @@ plt.style.use('fivethirtyeight') # plotting style
 
 # Exploratory data analysis
 
-```Python
+```python
 # Loading train and test datasets
 train_filepath="../input/home-data-for-ml-course/train.csv"
 train=pd.read_csv(train_filepath)
@@ -61,7 +61,7 @@ print("test dataset size is", test.shape)
 > train dataset size is (1460, 81)
 > test dataset size is (1459, 80)
 
-```Python
+```python
 # Examine train dataset
 train.head()
 ```
@@ -82,7 +82,7 @@ train.describe()
 
 <br/><img src='/images/HousingPrice/out6.jpg'
 
-```Python
+```python
 # data frame information: non-null values and data types
 train.info()
 ```
@@ -91,7 +91,7 @@ train.info()
 
 There are null values which needs to be addressed.
 
-```Python
+```python
 # Ploting Id column
 sns.lineplot(data=train.Id)
 sns.lineplot(data=test.Id)
@@ -99,7 +99,7 @@ sns.lineplot(data=test.Id)
 
 <br/><img src='/images/HousingPrice/out10.png'
 
-```Python
+```python
 # Dropping unnecessary column "Id"
 train.drop('Id', axis='columns', inplace=True) # If True, do operation inplace and return None.
 test.drop('Id', axis='columns', inplace=True)
@@ -118,7 +118,7 @@ print("Size of test data features", test_features.shape)
 > Size of train data features (1460, 79)
 > Size of test data features (1459, 79)
 
-```Python
+```python
 # Effect of lot area on house sale price
 # Seaborn joint plot: bivariate plot with univariate marginal distributions
 sns.jointplot(data=train, x='LotArea', y='SalePrice', height=10, alpha=0.4, color='red', xlim=(-10000,50000), ylim=(-10000,500000))
@@ -128,7 +128,7 @@ sns.jointplot(data=train, x='LotArea', y='SalePrice', height=10, alpha=0.4, colo
 
 Distribution is similar to normal distribution with outliers.
 
-```Python
+```python
 # Heat map to examine numerical correlation and understand linear relationship between features. Top part is dropped since it is symmetric with the part below.
 
 correlation_train = train.corr(method='pearson') # Compute pairwise correlation of columns, excluding NA/null value
@@ -159,7 +159,7 @@ sns.heatmap(correlation_train, # data
 - Dwelling type (MSSubClass) and overall condition (OverallCond) not that dependent on the sale price.
 - There are correlation between number of rooms and area, garage size and area.
 
-```Python
+```python
 # Merging train and test data before editing to reduce data manipulation work
 features=pd.concat([train_features, test_features]).reset_index(drop=True) # resets the index to the default integer index
 print(features.shape)
@@ -167,7 +167,7 @@ print(features.shape)
 
 > (2919, 79)
 
-```Python
+```python
 # Frequency counts in a column, value_counts(): Frequency counts
 features['MSZoning'].value_counts(dropna=False) #Return a Series containing counts of unique values
 ```
@@ -195,13 +195,13 @@ sns.barplot(x=total_missing.index, y=percent)
 
 <br/><img src='/images/HousingPrice/out22.png'
 
-```Python
+```python
 # Identify if the missing data is categorical or numeric
 pd.concat([total_missing, train.dtypes], axis=1)
 ```
 
 # Addressing missing data
-```Python
+```python
 # List of columns with 'NaN' where NaN's equals none
 none_cols = ['Alley', 'MasVnrType', 'BsmtQual', 'BsmtCond',
              'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2', 'FireplaceQu',
@@ -231,7 +231,7 @@ total_missing
 
 <br/><img src='/images/HousingPrice/out26.jpg'
 
-```Python
+```python
 # Examine MSZoning categorical data based on MSSubClass
 plt.figure(figsize=(15,10))
 sns.boxplot(x=features['MSSubClass'], y=features['MSZoning'], whis=np.inf)
@@ -240,7 +240,7 @@ sns.stripplot(x=features['MSSubClass'], y=features['MSZoning'], color='0.3')
 
 <br/><img src='/images/HousingPrice/out27.png'
 
-```Python
+```python
 # Examine LotFrontage categorical data based on Neighborhood
 plt.figure(figsize=(15,10))
 sns.boxplot(x=features['Neighborhood'], y=features['LotFrontage'], whis=np.inf)
@@ -268,14 +268,14 @@ features['MoSold'] = features['MoSold'].astype(str)
 
 # Feature engineering
 
-```Python
+```python
 features.nunique()
 # features['Condition1']
 ```
 
 <br/><img src='/images/HousingPrice/out30.jpg'
 
-```Python
+```python
 # Transforming rare values (less than 10) into one group.
 
 others = ['Condition1', 'Condition2', 'RoofMatl', 'Exterior1st', 'Exterior2nd','Heating', 'Electrical', 'Functional', 'SaleType']
@@ -453,7 +453,7 @@ features.drop(columns='SalePrice', inplace=True)
 ```
 
 # Creating new features
-```Python
+```python
 # Combining related features based on observations
 features['TotalSF'] = (features['BsmtFinSF1'] + features['BsmtFinSF2'] + features['1stFlrSF'] + features['2ndFlrSF'])
 features['TotalBathrooms'] = (features['FullBath'] + (0.5 * features['HalfBath']) + features['BsmtFullBath'] + (0.5 * features['BsmtHalfBath']))
@@ -517,7 +517,7 @@ features['HasPorch'] = features['QualPorch'].apply(lambda x: 1 if x > 0 else 0)
 ```
 
 # Data transformation
-```Python
+```python
 # Certain continious variable features does not follow normal distribution
 # Box-Cox transforms data closely to normal distribution
 
@@ -554,7 +554,7 @@ features = pd.get_dummies(data=features) # Convert categorical variable into dum
 
 # Data check
 
-```Python
+```python
 # Checking data before modelling 
 print(f'Number of missing values: {features.isna().sum().sum()}')
 print(features.shape)
@@ -566,7 +566,7 @@ features.head()
 
 <br/><img src='/images/HousingPrice/out44.jpg'
 
-```Python
+```python
 # Separating train and test data
 train = features.iloc[:len(y), :]
 test = features.iloc[len(train):, :]
@@ -636,7 +636,7 @@ plot_dist3(train.join(y), 'SalePrice', 'Sale Price Before Log Transformation')
 
 <br/><img src='/images/HousingPrice/out48.jpg'
 
-```Python
+```python
 # Setting model data.
 
 X = train
@@ -659,7 +659,7 @@ kfolds = KFold(n_splits=10, shuffle=True, random_state=42) # Training data is sp
 ```
 
 # Defining model
-```Python
+```python
 # Lasso regression
 from sklearn.linear_model import LassoCV
 from sklearn.pipeline import make_pipeline
@@ -694,7 +694,7 @@ stackcv = StackingCVRegressor(regressors=(lasso, ridge, gradb), meta_regressor=x
 ```
 
 # Model performance
-```Python
+```python
 from sklearn.model_selection import cross_validate
 def model_check(X, y, estimators, kfolds):
     ''' Function to test multiple estimators '''
@@ -732,7 +732,7 @@ stackcv_fit = stackcv.fit(X.values, yl.values)
 ```
 
 # Blending models
-```Python
+```python
 y_train = np.expm1(yl)
 y_pred = np.expm1((0.3 * lasso_fit.predict(X)) +
           (0.3 * ridge_fit.predict(X)) +
@@ -747,7 +747,7 @@ print(rmsle)
 > 0.0694000779271092
 
 # Prediction
-```Python
+```python
 # Inversing and flooring log scaled sale price predictions
 prediction['SalePrice'] = np.floor(np.expm1((0.3 * lasso_fit.predict(X_test)) +
                                             (0.3 * ridge_fit.predict(X_test)) +
@@ -761,7 +761,7 @@ prediction.head()
 
 <br/><img src='/images/HousingPrice/out70.jpg'
 
-```Python
+```python
 # Saving prediction file
 prediction.to_csv('prediction.csv', index=False)
 ```
