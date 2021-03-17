@@ -137,7 +137,7 @@ plt.show()
 <img src='/images/INVehCrash/out13.png'>
 
 # Next steps (currently working on)
-Feature engineering
-Attributes selection
-Machine learning model
-Results and discussion
+Feature engineering<br>
+Attributes selection<br>
+Machine learning model<br>
+Results and discussion<br>
